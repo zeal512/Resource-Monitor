@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Memory Usage Insights</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        
+        .chartContainer {
+            /* width: 20%; 
+            height: 20%; 
+            margin: auto; 
+            float: left;
+            margin-right: 20px; */
+            width: 400px;
+            height: 400px;
+            margin: auto;
+        }
+        .box{
+            float: left;
+            width: 100%;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <h1> Computer Usage Stats </h1>
+    <!--<button onclick="fetchMemoryUsage()">Get Memory Usage</button>-->
+    
+    <div>
+        <div class="chartContainer">
+            <canvas id="memoryChart"></canvas>
+        </div>
+        <div class="box">
+            <h2>Top 10 Processes</h2>
+            <p> <span id="top10"></span></p>
+        </div>
+        <div class="box">
+            <h2>CPU Usage</h2>
+            <p> <span id="cpuUsage"></span></p>
+        </div>
+    
+        <div class="box">
+            <h2>Disk Usage over last 5 seconds</h2>
+            <p> <span id="reads"></span></p>
+            <p> <span id="writes"></span></p>
+            <p> <span id="percentUsed"></span></p>
+        </div>
+    
+        <div class="box">
+            <h2>Network Usage over last 5 seconds</h2>
+            <p><span id="bytesReceivedPerSec"></span></p>
+            <p><span id="bytesSendPerSec"></span></p>
+        </div>
+    </div>
+    
+
+    <script>
+        function fetchMemoryUsage() {
+            
+            fetch('http://localhost:8080/systemMetrics')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('memoryChart').getContext('2d');
+                const cpu = document.getElementById('cpuUsage');
+                const reads = document.getElementById('reads');
+                const writes = document.getElementById('writes');
+                const percentUsed = document.getElementById('percentUsed');
+                const bytesReceivedPerSec = document.getElementById('bytesReceivedPerSec');
+                const bytesSendPerSec = document.getElementById('bytesSendPerSec');
+                const top10 = document.getElementById('top10');
+                let chartStatus = Chart.getChart("memoryChart"); 
+                if (chartStatus != undefined) {
+                    chartStatus.destroy();
+                }
+                top10.innerHTML = "";
+                data.processorList.forEach(function(process){
+                    var processDiv = document.createElement("div");
+                    processDiv.classList.add("process");
+                    var processHTML = "<br><strong>Name:</strong> " + process.name + "<br>";
+                    processHTML += "<strong>Process ID:</strong> " + process.processID + "<br>";
+                    processHTML += "<strong>Memory Usage:</strong> " + process.residentSetSize + " bytes<br>";
+                    processDiv.innerHTML = processHTML;
+                    top10.appendChild(processDiv);
+                });
+                cpu.innerText=data.cpuUsage.toFixed(2)+'%';
+                reads.innerText="reads:"+data.reads;
+                writes.innerText="writes:"+data.writes;
+                percentUsed.innerText="Percent Used:"+data.percentUsed.toFixed(2)+'%';
+                bytesReceivedPerSec.innerText="Bytes Received Per Second:"+data.bytesReceivedPerSec;
+                bytesSendPerSec.innerText="Bytes Sent Per Second:"+data.bytesSentPerSec;
+                const memoryChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Used Memory', 'Available Memory'],
+                        datasets: [{
+                            label: 'Memory Usage',
+                            data: [data.totalMemory-data.availableMemory, data.availableMemory],
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.5)',
+                                'rgba(54, 162, 235, 0.5)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    }
+                });
+            });
+        }
+        window.onload = function() {
+            fetchMemoryUsage();
+        };
+        setInterval(fetchMemoryUsage,6000)
+    </script>
+</body>
+</html>
