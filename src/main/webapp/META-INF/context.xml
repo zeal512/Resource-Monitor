@@ -1,0 +1,5 @@
+<Context>
+    <JarScanner>
+        <JarScanFilter tldScan="jakarta.servlet.jsp.jstl*.jar" />
+    </JarScanner>
+</Context>
